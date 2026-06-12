@@ -1,0 +1,11 @@
+# Compiled files
+*.class
+*.jar
+.gitignore
+
+# IDE folders
+.idea/
+*.iml
+.vscode/
+out/
+bin/

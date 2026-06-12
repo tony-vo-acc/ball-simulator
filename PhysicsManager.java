@@ -17,6 +17,10 @@ public class PhysicsManager {
     balls.add(ball);
   }
 
+  public void removeBall(Ball ball) {
+    balls.remove(ball);
+  }
+
   public List<Ball> getBalls() {
     return balls;
   }
@@ -32,6 +36,7 @@ public class PhysicsManager {
     integrate(delta);
     checkWalls();
     resolveBallCollisions();
+    removeDeadBalls();
   }
 
   private void checkWalls() {
@@ -73,17 +78,32 @@ public class PhysicsManager {
           double overlap = minDist - dist;
           double nx = dx / dist;
           double ny = dy / dist;
+          double totalMass = b1.mass + b2.mass;
 
-          b1.x += nx * overlap;
-          b1.y += ny * overlap;
-          b2.x -= nx * overlap;
-          b2.y -= ny * overlap;
+          b1.x += nx * overlap * (b2.mass / totalMass);
+          b1.y += ny * overlap * (b2.mass / totalMass);
+          b2.x -= nx * overlap * (b1.mass / totalMass);
+          b2.y -= ny * overlap * (b1.mass / totalMass);
 
           double relativeVelocityX = b1.vx - b2.vx;
           double relativeVelocityY = b1.vy - b2.vy;
           double velocityNormal = relativeVelocityX * nx + relativeVelocityY * ny;
 
-          if (velocityNormal > 0) {
+          // if balls collide
+          if (velocityNormal < 0) {
+            double impactSpeed = Math.abs(velocityNormal);
+            double damage = impactSpeed / 300;
+            b1.health -= damage;
+            b2.health -= damage;
+
+            if (b1.health <= 0) {
+              b1.isAlive = false;
+            }
+
+            if (b2.health <= 0) {
+              b2.isAlive = false;
+            }
+
             double impulse = -(1 + MOMENTUM) * velocityNormal / (1.0 / b1.mass + 1.0 / b2.mass);
             b1.vx += impulse / b1.mass * nx;
             b1.vy += impulse / b1.mass * ny;
@@ -93,5 +113,9 @@ public class PhysicsManager {
         }
       }
     }
+  }
+
+  private void removeDeadBalls() {
+    balls.removeIf(b -> !b.isAlive);
   }
 }
